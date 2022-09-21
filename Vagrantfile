@@ -2,6 +2,8 @@
 # vi: set ft=ruby :
 
 $script = <<-SCRIPT
+git config --global user.email "vishpat@gmail.com"
+git config --global user.name "Vishal Patil"
 sudo apt-get install -y libssl-dev
 curl https://sh.rustup.rs -sSf | sh -s -- -y
 source $HOME/.cargo/env
