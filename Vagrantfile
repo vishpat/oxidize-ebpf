@@ -7,6 +7,7 @@ $script = <<-SCRIPT
 #sudo dnf -y install bpftool clang-devel
 #sudo dnf -y install openssl-devel
 curl https://sh.rustup.rs -sSf | sh -s -- -y
+source $HOME/.cargo/env
 #sudo dnf -y install cargo
 #sudo dnf -y install screen
 sudo apt-get install -y libssl-dev
