@@ -1,0 +1,2 @@
+[workspace]
+members = ["tracepoint-demo", "tracepoint-demo-common", "xtask"]
