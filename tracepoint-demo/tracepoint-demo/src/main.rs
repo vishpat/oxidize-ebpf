@@ -4,6 +4,8 @@ use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
 use tokio::signal;
+use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+
 
 #[derive(Debug, Parser)]
 struct Opt {
@@ -14,7 +16,16 @@ struct Opt {
 async fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::parse();
 
-    env_logger::init();
+    TermLogger::init(
+        LevelFilter::Debug,
+        ConfigBuilder::new()
+            .set_target_level(LevelFilter::Error)
+            .set_location_level(LevelFilter::Error)
+            .build(),
+        TerminalMode::Mixed,
+        ColorChoice::Auto,
+    )?;
+
 
     // This will include your eBPF object file as raw bytes at compile-time and load it at
     // runtime. This approach is recommended for most real-world use cases. If you would

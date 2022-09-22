@@ -5,6 +5,7 @@ $script = <<-SCRIPT
 git config --global user.email "vishpat@gmail.com"
 git config --global user.name "Vishal Patil"
 sudo apt-get install -y libssl-dev
+sudo apt-get install -y clang
 curl https://sh.rustup.rs -sSf | sh -s -- -y
 source $HOME/.cargo/env
 apt-get install -y libssl-dev
@@ -14,6 +15,7 @@ cargo install bindgen
 cargo install bpf-linker
 cargo install cargo-generate
 cargo install cargo-xtask
+cargo install --git https://github.com/aya-rs/aya -- aya-tool
 SCRIPT
 
 
