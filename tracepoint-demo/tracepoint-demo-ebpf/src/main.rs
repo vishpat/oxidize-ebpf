@@ -3,11 +3,12 @@
 
 use aya_bpf::{
     cty::c_long,
-    helpers::bpf_probe_read_user_str_bytes,
+    helpers::{bpf_probe_read_user_str_bytes, bpf_get_current_pid_tgid },
     macros::{tracepoint},
     maps::PerCpuArray,
     programs::TracePointContext,
 };
+
 use aya_log_ebpf::info;
 
 #[tracepoint(name = "tracepoint_demo")]
@@ -20,8 +21,10 @@ pub fn tracepoint_demo(ctx: TracePointContext) -> c_long {
 
 fn try_tracepoint_demo(ctx: TracePointContext) -> Result<c_long, c_long> {
     const FILENAME_OFFSET: usize = 16;
+    const BUF_SIZE: usize = 128;
     let filename_addr: u64 = unsafe { ctx.read_at(FILENAME_OFFSET)? };
-    let mut buf = [0u8; 128];
+    let mut buf = [0u8; BUF_SIZE];
+    let pid = bpf_get_current_pid_tgid() as u32;
 
     // read the filename
     let filename = unsafe {
@@ -31,9 +34,9 @@ fn try_tracepoint_demo(ctx: TracePointContext) -> Result<c_long, c_long> {
         )?)
     };
 
-    if filename.len() < 512 {
+    if filename.len() < BUF_SIZE {
         // log the filename
-        info!(&ctx, "{}", filename);
+        info!(&ctx, "{} {}", 0xffffffff & pid, filename);
     }
 
     Ok(0)
