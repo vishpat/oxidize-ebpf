@@ -1,0 +1,2 @@
+[workspace]
+members = ["block-binary", "block-binary-common", "xtask"]
