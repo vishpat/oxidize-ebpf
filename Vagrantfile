@@ -20,6 +20,8 @@ cargo install cargo-generate
 cargo install cargo-xtask
 cargo install --git https://github.com/aya-rs/aya -- aya-tool
 
+## Re-install if the kernel is upgraded. Required to generate correct vmlinux.rs
+
 git clone --recurse-submodules https://github.com/libbpf/bpftool.git
 cd bpftool/src
 make
