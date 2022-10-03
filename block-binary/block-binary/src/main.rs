@@ -1,6 +1,8 @@
+use aya::maps::HashMap;
 use aya::{include_bytes_aligned, Bpf};
 use aya::{programs::Lsm, Btf};
 use aya_log::BpfLogger;
+use block_binary_common::BinaryName;
 use clap::Parser;
 use log::{info, warn};
 use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
@@ -43,6 +45,14 @@ async fn main() -> Result<(), anyhow::Error> {
     info!("Loading task_alloc program");
     program.load("task_alloc", &btf)?;
     program.attach()?;
+
+    let mut blocklist: HashMap<_, BinaryName, u32> = HashMap::try_from(bpf.map_mut("BLOCKLIST")?)?;
+    let mut binary_name: BinaryName = BinaryName { name: [0; 16] };
+    binary_name.name[0] = b'n';
+    binary_name.name[1] = b'o';
+    binary_name.name[2] = b'd';
+    binary_name.name[3] = b'e';
+    blocklist.insert(binary_name, 1, 1)?;
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
