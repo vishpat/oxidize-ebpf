@@ -52,13 +52,15 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut blocklist: HashMap<_, BinaryName, u32> = 
         HashMap::try_from(bpf.map_mut("BLOCKLIST")?)?;
-    let mut binary_name: BinaryName = 
-        BinaryName { name: [0; 16] };
-    binary_name.name[0] = b'n';
-    binary_name.name[1] = b'o';
-    binary_name.name[2] = b'd';
-    binary_name.name[3] = b'e';
-    blocklist.insert(binary_name, 1, 1)?;
+
+    let progs = vec!["node", "apt"];
+
+    for prog in progs.iter() {
+        let mut binary_name: BinaryName = 
+            BinaryName { name: [0; 16] };
+        binary_name.name[..prog.len()].copy_from_slice(&prog.as_bytes());
+        blocklist.insert(binary_name, 1, 1)?;
+    }
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
