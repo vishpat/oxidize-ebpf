@@ -6,6 +6,9 @@ git config --global user.email "vishpat@gmail.com"
 git config --global user.name "Vishal Patil"
 sudo apt-get install -y libssl-dev
 sudo apt-get install -y clang
+sudo apt install libclang-dev
+sudo apt install libelf-dev
+sudo apt install zlib1g
 curl https://sh.rustup.rs -sSf | sh -s -- -y
 source $HOME/.cargo/env
 apt-get install -y libssl-dev
@@ -16,6 +19,11 @@ cargo install bpf-linker
 cargo install cargo-generate
 cargo install cargo-xtask
 cargo install --git https://github.com/aya-rs/aya -- aya-tool
+
+git clone --recurse-submodules https://github.com/libbpf/bpftool.git
+cd bpftool/src
+make
+sudo make install
 SCRIPT
 
 
