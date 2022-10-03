@@ -5,7 +5,11 @@ use aya_log::BpfLogger;
 use block_binary_common::BinaryName;
 use clap::Parser;
 use log::{info, warn};
-use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use simplelog::{ColorChoice, 
+    ConfigBuilder, 
+    LevelFilter, 
+    TermLogger, 
+    TerminalMode};
 use tokio::signal;
 
 #[derive(Debug, Parser)]
@@ -46,8 +50,10 @@ async fn main() -> Result<(), anyhow::Error> {
     program.load("task_alloc", &btf)?;
     program.attach()?;
 
-    let mut blocklist: HashMap<_, BinaryName, u32> = HashMap::try_from(bpf.map_mut("BLOCKLIST")?)?;
-    let mut binary_name: BinaryName = BinaryName { name: [0; 16] };
+    let mut blocklist: HashMap<_, BinaryName, u32> = 
+        HashMap::try_from(bpf.map_mut("BLOCKLIST")?)?;
+    let mut binary_name: BinaryName = 
+        BinaryName { name: [0; 16] };
     binary_name.name[0] = b'n';
     binary_name.name[1] = b'o';
     binary_name.name[2] = b'd';

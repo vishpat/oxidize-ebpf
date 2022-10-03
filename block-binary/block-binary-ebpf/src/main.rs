@@ -6,7 +6,8 @@
 #[allow(dead_code)]
 mod vmlinux;
 
-use aya_bpf::{macros::{map, lsm}, programs::LsmContext, maps::HashMap};
+use aya_bpf::{macros::{map, lsm}, 
+    programs::LsmContext, maps::HashMap};
 use aya_log_ebpf::info;
 use vmlinux::task_struct;
 use block_binary_common::BinaryName;
@@ -29,9 +30,14 @@ fn block_binary(binary_name: &BinaryName) -> bool {
 }
 
 fn try_task_alloc(ctx: LsmContext) -> Result<i32, i32> {
-    let task: *const task_struct = unsafe { ctx.arg::<*const task_struct>(0) as *const task_struct };
+    
+    let task: *const task_struct = unsafe { 
+            ctx.arg::<*const task_struct>(0) as 
+            *const task_struct };
+
     let name = unsafe {&(*task).comm};
-    let mut binary_name: BinaryName = BinaryName { name: [0; 16] };
+    let mut binary_name: BinaryName = 
+        BinaryName { name: [0; 16] };
 
     let mut i: usize = 0;
     for c in name.iter() {
@@ -39,10 +45,6 @@ fn try_task_alloc(ctx: LsmContext) -> Result<i32, i32> {
         i += 1;
     }
     let block = block_binary(&binary_name);
-    info!(&ctx, "lsm hook task_alloc called {} block {}", unsafe {
-        core::str::from_utf8_unchecked(&binary_name.name)
-    }, if block {1} else {0});
-
     if block {
         return Err(-1);
     }
