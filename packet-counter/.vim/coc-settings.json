@@ -1,0 +1,3 @@
+{
+  "rust-analyzer.linkedProjects": ["Cargo.toml", "packet-counter-ebpf/Cargo.toml"]
+}
