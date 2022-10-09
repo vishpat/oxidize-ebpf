@@ -1,24 +1,17 @@
 extern crate libc;
-use aya::{include_bytes_aligned, Bpf};
-use std::net::TcpStream;
-use std::os::unix::io::AsRawFd;
 use aya::programs::SocketFilter;
+use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
+use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use std::net::TcpStream;
 use tokio::signal;
-use simplelog::{ColorChoice, 
-    ConfigBuilder, 
-    LevelFilter, 
-    TermLogger, 
-    TerminalMode};
 
 const ETH_P_ALL: u16 = 0x0003;
 
 #[derive(Debug, Parser)]
-struct Opt {
-    
-}
+struct Opt {}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -49,9 +42,7 @@ async fn main() -> Result<(), anyhow::Error> {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
     }
-    let client = unsafe {
-        libc::socket(libc::AF_PACKET, libc::SOCK_RAW, ETH_P_ALL.to_be() as i32)
-    };
+    let client = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_RAW, ETH_P_ALL.to_be() as i32) };
     let prog: &mut SocketFilter = bpf.program_mut("packet_counter").unwrap().try_into()?;
     prog.load()?;
     prog.attach(client)?;
