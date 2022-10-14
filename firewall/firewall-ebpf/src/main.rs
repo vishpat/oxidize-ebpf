@@ -15,9 +15,11 @@ use aya_bpf::{
     programs::XdpContext,
 };
 use aya_bpf::{macros::{map}, maps::HashMap};
+use aya_log_ebpf::info;
 
 pub const IP_PROTO: u16 = 0x0800;
 pub const TCP_PROTO: u8 = 0x6;
+const ETH_HDR_LEN: usize = mem::size_of::<ethhdr>();
 
 #[map(name = "BLOCKED_IPS")]  
 static mut BLOCKED_IPS: HashMap<u32, u8> =
@@ -43,16 +45,29 @@ unsafe fn ptr_at<T>(ctx: &XdpContext, offset: usize) -> Result<*const T, ()> {
 }
 
 fn try_firewall(ctx: XdpContext) -> Result<u32, u32> {
+    let start = ctx.data();
+    let end = ctx.data_end();
+   
+    // Without the boundary check, the eBPF verification will fail
+    if start + ETH_HDR_LEN > end {
+        return Err(xdp_action::XDP_ABORTED);
+    }
+
     let eth_proto = u16::from_be(unsafe { *ptr_at(&ctx, offset_of!(ethhdr, h_proto)).unwrap() });
     if eth_proto != IP_PROTO {
         return Ok(xdp_action::XDP_PASS);
     }
     
-    let src_addr = u32::from_be(unsafe { *ptr_at(&ctx, offset_of!(iphdr, saddr)).unwrap() });
-//    if unsafe {BLOCKED_IPS.get(&src_addr).unwrap_or(&0)} == &1 {
-//        return Ok(xdp_action::XDP_DROP);
-//    } 
-//
+    // Without the boundary check, the eBPF verification will fail
+    if start + ETH_HDR_LEN + mem::size_of::<iphdr>() > end {
+        return Err(xdp_action::XDP_ABORTED);
+    }
+
+    let src_addr = u32::from_be(unsafe { *ptr_at(&ctx, ETH_HDR_LEN + offset_of!(iphdr, saddr)).unwrap() });
+    if unsafe {BLOCKED_IPS.get(&src_addr).is_some()} {
+        return Ok(xdp_action::XDP_DROP);
+    } 
+
     Ok(xdp_action::XDP_PASS)
 }
 
