@@ -1,12 +1,27 @@
 #![no_std]
 #![no_main]
+#[allow(non_upper_case_globals)]
+#[allow(non_snake_case)]
+#[allow(non_camel_case_types)]
+#[allow(dead_code)]
 
+mod vmlinux;
+use vmlinux::{ethhdr, iphdr};
+use core::mem;
+use memoffset::offset_of;
 use aya_bpf::{
     bindings::xdp_action,
     macros::xdp,
     programs::XdpContext,
 };
-use aya_log_ebpf::info;
+use aya_bpf::{macros::{map}, maps::HashMap};
+
+pub const IP_PROTO: u16 = 0x0800;
+pub const TCP_PROTO: u8 = 0x6;
+
+#[map(name = "BLOCKED_IPS")]  
+static mut BLOCKED_IPS: HashMap<u32, u8> =
+    HashMap::<u32, u8>::with_max_entries(1024, 0);
 
 #[xdp(name="firewall")]
 pub fn firewall(ctx: XdpContext) -> u32 {
@@ -16,8 +31,28 @@ pub fn firewall(ctx: XdpContext) -> u32 {
     }
 }
 
+unsafe fn ptr_at<T>(ctx: &XdpContext, offset: usize) -> Result<*const T, ()> {
+    let start = ctx.data();
+    let end = ctx.data_end();
+    let len = mem::size_of::<T>();
+
+    if start + offset + len > end {
+        return Err(());
+    }
+    Ok((start + offset) as *const T)
+}
+
 fn try_firewall(ctx: XdpContext) -> Result<u32, u32> {
-    info!(&ctx, "received a packet");
+    let eth_proto = u16::from_be(unsafe { *ptr_at(&ctx, offset_of!(ethhdr, h_proto)).unwrap() });
+    if eth_proto != IP_PROTO {
+        return Ok(xdp_action::XDP_PASS);
+    }
+    
+    let src_addr = u32::from_be(unsafe { *ptr_at(&ctx, offset_of!(iphdr, saddr)).unwrap() });
+//    if unsafe {BLOCKED_IPS.get(&src_addr).unwrap_or(&0)} == &1 {
+//        return Ok(xdp_action::XDP_DROP);
+//    } 
+//
     Ok(xdp_action::XDP_PASS)
 }
 

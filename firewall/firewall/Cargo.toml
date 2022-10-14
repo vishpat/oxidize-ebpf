@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+simplelog = "0.10"
 aya = { version = ">=0.11", features=["async_tokio"] }
 aya-log = "0.1"
 firewall-common = { path = "../firewall-common", features=["user"] }
