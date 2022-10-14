@@ -5,8 +5,8 @@ use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
-use tokio::signal;
 use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use tokio::signal;
 
 #[derive(Debug, Parser)]
 struct Opt {
@@ -26,7 +26,7 @@ async fn main() -> Result<(), anyhow::Error> {
         TerminalMode::Mixed,
         ColorChoice::Auto,
     )?;
-    
+
     // This will include your eBPF object file as raw bytes at compile-time and load it at
     // runtime. This approach is recommended for most real-world use cases. If you would
     // like to specify the eBPF program at runtime rather than at compile-time, you can
@@ -45,8 +45,7 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     let mut blocked_ips: HashMap<_, u32, u8> = HashMap::try_from(bpf.map_mut("BLOCKED_IPS")?)?;
-    blocked_ips.insert(0x0a020012, 1, 0)?;
-    blocked_ips.insert(0x0a020013, 1, 0)?;
+    blocked_ips.insert(0x0a000202, 1, 0)?;
 
     let program: &mut Xdp = bpf.program_mut("firewall").unwrap().try_into()?;
     program.load()?;

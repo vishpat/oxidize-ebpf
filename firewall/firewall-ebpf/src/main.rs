@@ -50,7 +50,7 @@ fn try_firewall(ctx: XdpContext) -> Result<u32, u32> {
    
     // Without the boundary check, the eBPF verification will fail
     if start + ETH_HDR_LEN > end {
-        return Err(xdp_action::XDP_ABORTED);
+        return Err(xdp_action::XDP_PASS);
     }
 
     let eth_proto = u16::from_be(unsafe { *ptr_at(&ctx, offset_of!(ethhdr, h_proto)).unwrap() });
@@ -60,7 +60,7 @@ fn try_firewall(ctx: XdpContext) -> Result<u32, u32> {
     
     // Without the boundary check, the eBPF verification will fail
     if start + ETH_HDR_LEN + mem::size_of::<iphdr>() > end {
-        return Err(xdp_action::XDP_ABORTED);
+        return Err(xdp_action::XDP_PASS);
     }
 
     let src_addr = u32::from_be(unsafe { *ptr_at(&ctx, ETH_HDR_LEN + offset_of!(iphdr, saddr)).unwrap() });
