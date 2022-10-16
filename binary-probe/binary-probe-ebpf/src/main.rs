@@ -46,6 +46,7 @@ fn try_binary_retprobe(ctx: ProbeContext) -> Result<u32, u32> {
     let end_time = unsafe {bpf_ktime_get_ns()};
     let duration = end_time - start_time;
     info!(&ctx, "Sendfile duration: for pid {} : {} nsecs", pid, duration);
+    unsafe {SENDFILE.remove(&pid).unwrap()}; 
     Ok(0)
 }
 
