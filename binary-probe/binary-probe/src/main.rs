@@ -1,4 +1,5 @@
 use aya::{include_bytes_aligned, Bpf};
+use aya::maps::HashMap;
 use aya::programs::UProbe;
 use aya_log::BpfLogger;
 use clap::Parser;
@@ -42,13 +43,15 @@ async fn main() -> Result<(), anyhow::Error> {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
     }
+    let mut _counters: HashMap<_, u32, u64> = HashMap::try_from(bpf.map_mut("SENDFILE")?)?;
+
     let program: &mut UProbe = bpf.program_mut("binary_probe").unwrap().try_into()?;
     program.load()?;
-    program.attach(Some("rename"), 0, "libc", opt.pid.try_into()?)?;
+    program.attach(Some("sendfile"), 0, "libc", opt.pid.try_into()?)?;
     
     let program: &mut UProbe = bpf.program_mut("binary_retprobe").unwrap().try_into()?;
     program.load()?;
-    program.attach(Some("rename"), 0, "libc", opt.pid.try_into()?)?;
+    program.attach(Some("sendfile"), 0, "libc", opt.pid.try_into()?)?;
 
 
     info!("Waiting for Ctrl-C...");
