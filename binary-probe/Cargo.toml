@@ -1,0 +1,2 @@
+[workspace]
+members = ["binary-probe", "binary-probe-common", "xtask"]
