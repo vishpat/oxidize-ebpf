@@ -1,0 +1,2 @@
+[workspace]
+members = ["block-mount", "block-mount-common", "xtask"]
