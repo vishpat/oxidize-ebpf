@@ -1,28 +1,17 @@
 # block-mount
 
-## Prerequisites
-
-1. Install a rust stable toolchain: `rustup install stable`
-1. Install a rust nightly toolchain: `rustup install nightly`
-1. Install bpf-linker: `cargo install bpf-linker`
-
-## Build eBPF
+Block mounting of a block device having btrfs filesystem on it.
 
 ```bash
-cargo xtask build-ebpf
+dd if=/dev/zero of=testfile.img bs=1M seek=1000 count=1
+DEVICE=$(sudo losetup --show -f testfile.img)
+sudo mkfs.btrfs -f $DEVICE
+mkdir tmpmnt
+mount $DEVICE tmpmnt
 ```
 
-To perform a release build you can use the `--release` flag.
-You may also change the target architecture with the `--target` flag
-
-## Build Userspace
+The mount should succeed with the ebpf program not running. It should fail with the following error with the eBPF program running.
 
 ```bash
-cargo build
-```
-
-## Run
-
-```bash
-cargo xtask run
+mount: /tmpmnt: mount(2) system call failed: Cannot allocate memory.
 ```
