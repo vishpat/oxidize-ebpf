@@ -4,9 +4,11 @@
 use aya_bpf::{
     macros::kprobe,
     programs::ProbeContext,
+    helpers::bpf_override_return,
 };
 use aya_log_ebpf::info;
 
+const ENOMEM: i32 = -12;
 #[kprobe(name="block_mount")]
 pub fn block_mount(ctx: ProbeContext) -> u32 {
     match try_block_mount(ctx) {
@@ -17,6 +19,7 @@ pub fn block_mount(ctx: ProbeContext) -> u32 {
 
 fn try_block_mount(ctx: ProbeContext) -> Result<u32, u32> {
     info!(&ctx, "function open_ctree called");
+    unsafe {bpf_override_return(ctx.regs, ENOMEM as u64)};
     Ok(0)
 }
 
