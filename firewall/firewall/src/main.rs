@@ -6,6 +6,7 @@ use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
 use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use std::net::Ipv4Addr;
 use tokio::signal;
 
 #[derive(Debug, Parser)]
@@ -45,8 +46,13 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     let mut blocked_ips: HashMap<_, u32, u8> = HashMap::try_from(bpf.map_mut("BLOCKED_IPS")?)?;
-    blocked_ips.insert(0x0a000202, 1, 0)?;
+    let mut blocked_ip = Ipv4Addr::new(192, 168, 0, 1);
+    blocked_ips.insert(u32::from(blocked_ip), 1, 0)?;
 
+    blocked_ip = Ipv4Addr::new(192, 168, 0, 2);
+    blocked_ips.insert(u32::from(blocked_ip), 1, 0)?;
+
+   
     let program: &mut Xdp = bpf.program_mut("firewall").unwrap().try_into()?;
     program.load()?;
     program.attach(&opt.iface, XdpFlags::default())

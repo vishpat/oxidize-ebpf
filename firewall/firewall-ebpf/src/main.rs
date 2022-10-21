@@ -15,7 +15,6 @@ use aya_bpf::{
     programs::XdpContext,
 };
 use aya_bpf::{macros::{map}, maps::HashMap};
-use aya_log_ebpf::info;
 
 pub const IP_PROTO: u16 = 0x0800;
 pub const TCP_PROTO: u8 = 0x6;
