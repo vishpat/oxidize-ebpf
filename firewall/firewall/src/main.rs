@@ -5,7 +5,10 @@ use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
-use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use simplelog::{
+    ColorChoice, ConfigBuilder, LevelFilter,
+    TermLogger, TerminalMode,
+};
 use std::net::Ipv4Addr;
 use tokio::signal;
 
@@ -28,10 +31,6 @@ async fn main() -> Result<(), anyhow::Error> {
         ColorChoice::Auto,
     )?;
 
-    // This will include your eBPF object file as raw bytes at compile-time and load it at
-    // runtime. This approach is recommended for most real-world use cases. If you would
-    // like to specify the eBPF program at runtime rather than at compile-time, you can
-    // reach for `Bpf::load_file` instead.
     #[cfg(debug_assertions)]
     let mut bpf = Bpf::load(include_bytes_aligned!(
         "../../target/bpfel-unknown-none/debug/firewall"
@@ -41,22 +40,29 @@ async fn main() -> Result<(), anyhow::Error> {
         "../../target/bpfel-unknown-none/release/firewall"
     ))?;
     if let Err(e) = BpfLogger::init(&mut bpf) {
-        // This can happen if you remove all log statements from your eBPF program.
-        warn!("failed to initialize eBPF logger: {}", e);
+        warn!(
+            "failed to initialize eBPF logger: {}",
+            e
+        );
     }
 
-    let mut blocked_ips: HashMap<_, u32, u8> = HashMap::try_from(bpf.map_mut("BLOCKED_IPS")?)?;
+    let mut blocked_ips: HashMap<_, u32, u8> =
+        HashMap::try_from(
+            bpf.map_mut("BLOCKED_IPS")?,
+        )?;
     let mut blocked_ip = Ipv4Addr::new(192, 168, 0, 1);
     blocked_ips.insert(u32::from(blocked_ip), 1, 0)?;
 
     blocked_ip = Ipv4Addr::new(192, 168, 0, 2);
     blocked_ips.insert(u32::from(blocked_ip), 1, 0)?;
 
-   
-    let program: &mut Xdp = bpf.program_mut("firewall").unwrap().try_into()?;
+    let program: &mut Xdp = bpf
+        .program_mut("firewall")
+        .unwrap()
+        .try_into()?;
     program.load()?;
     program.attach(&opt.iface, XdpFlags::default())
-        .context("failed to attach the XDP program with default flags - try changing XdpFlags::default() to XdpFlags::SKB_MODE")?;
+        .context("failed to attach the XDP program")?;
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
