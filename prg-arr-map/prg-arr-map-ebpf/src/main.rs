@@ -24,6 +24,21 @@ static mut COUNTERS: HashMap<u8, u32> =
 static mut JUMP_TABLE: ProgramArray = 
     ProgramArray::with_max_entries(10, 0);
 
+#[socket_filter(name="process_icmp")]
+pub fn process_icmp(_ctx: SkBuffContext) -> i64 {
+    return 0
+}
+
+#[socket_filter(name="process_tcp")]
+pub fn process_tcp(_ctx: SkBuffContext) -> i64 {
+    return 0
+}
+
+#[socket_filter(name="process_udp")]
+pub fn process_udp(_ctx: SkBuffContext) -> i64 {
+    return 0
+}
+
 #[socket_filter(name="prg_arr_map")]
 pub fn prg_arr_map(_ctx: SkBuffContext) -> i64 {
     return 0
