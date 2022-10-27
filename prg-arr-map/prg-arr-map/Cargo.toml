@@ -14,6 +14,7 @@ clap = { version = "3.1", features = ["derive"] }
 env_logger = "0.9"
 log = "0.4"
 tokio = { version = "1.18", features = ["macros", "rt", "rt-multi-thread", "net", "signal"] }
+libc = "0.2.134"
 
 [[bin]]
 name = "prg-arr-map"

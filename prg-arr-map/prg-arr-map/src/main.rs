@@ -1,3 +1,4 @@
+extern crate libc;
 use aya::{include_bytes_aligned, Bpf};
 use aya::maps::{HashMap, ProgramArray};
 use std::net::TcpStream;
@@ -9,6 +10,8 @@ use log::{info, warn};
 use tokio::signal;
 use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
 use prg_arr_map_common::{ICMP_PROTO, TCP_PROTO, UDP_PROTO, ICMP_PROG_IDX, TCP_PROG_IDX, UDP_PROG_IDX};
+
+const ETH_P_ALL: u16 = 0x0003;
 
 #[derive(Debug, Parser)]
 struct Opt {
@@ -44,22 +47,22 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut counters: HashMap<_, u8, u32> = HashMap::try_from(bpf.map_mut("COUNTERS")?)?;
     let mut prog_array = ProgramArray::try_from(bpf.map_mut("JUMP_TABLE")?)?;
 
-    let client = TcpStream::connect("127.0.0.1:1234")?;
+    let client = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_RAW, ETH_P_ALL.to_be() as i32) };
     let prog: &mut SocketFilter = bpf.program_mut("prg_arr_map").unwrap().try_into()?;
     prog.load()?;
     prog.attach(client.as_raw_fd())?;
 
-//    let tcp_prog: &mut SocketFilter = bpf.program_mut("process_tcp").unwrap().try_into()?;
-//    tcp_prog.load()?;
-//    prog_array.set(TCP_PROG_IDX, tcp_prog, 0)?;
-//
-//    let udp_prog: &mut SocketFilter = bpf.program_mut("process_udp").unwrap().try_into()?;
-//    udp_prog.load()?;
-//    prog_array.set(UDP_PROG_IDX, udp_prog, 0)?;
-//
-//    let icmp_prog: &mut SocketFilter = bpf.program_mut("process_icmp").unwrap().try_into()?;
-//    icmp_prog.load()?;
-//    prog_array.set(ICMP_PROG_IDX, icmp_prog, 0)?;
+    let tcp_prog: &mut SocketFilter = bpf.program_mut("process_tcp").unwrap().try_into()?;
+    tcp_prog.load()?;
+    prog_array.set(TCP_PROG_IDX, tcp_prog, 0)?;
+
+    let udp_prog: &mut SocketFilter = bpf.program_mut("process_udp").unwrap().try_into()?;
+    udp_prog.load()?;
+    prog_array.set(UDP_PROG_IDX, udp_prog, 0)?;
+
+    let icmp_prog: &mut SocketFilter = bpf.program_mut("process_icmp").unwrap().try_into()?;
+    icmp_prog.load()?;
+    prog_array.set(ICMP_PROG_IDX, icmp_prog, 0)?;
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
