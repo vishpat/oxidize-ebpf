@@ -1,0 +1,2 @@
+[workspace]
+members = ["prg-arr-map", "prg-arr-map-common", "xtask"]
