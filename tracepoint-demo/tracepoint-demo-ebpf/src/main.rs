@@ -8,14 +8,15 @@ use aya_bpf::{
         bpf_probe_read_user_str_bytes,
     },
     macros::tracepoint,
-    maps::PerCpuArray,
     programs::TracePointContext,
 };
 
 use aya_log_ebpf::info;
 
 #[tracepoint(name = "tracepoint_demo")]
-pub fn tracepoint_demo(ctx: TracePointContext) -> c_long {
+pub fn tracepoint_demo(
+    ctx: TracePointContext,
+) -> c_long {
     match try_tracepoint_demo(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
@@ -44,7 +45,12 @@ fn try_tracepoint_demo(
 
     if filename.len() < BUF_SIZE {
         // log the filename
-        info!(&ctx, "{} {}", 0xffffffff & pid, filename);
+        info!(
+            &ctx,
+            "{} {}",
+            0xffffffff & pid,
+            filename
+        );
     }
 
     Ok(0)
