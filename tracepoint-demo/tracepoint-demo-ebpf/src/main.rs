@@ -26,8 +26,10 @@ pub fn tracepoint_demo(
 fn try_tracepoint_demo(
     ctx: TracePointContext,
 ) -> Result<c_long, c_long> {
+
     const FILENAME_OFFSET: usize = 16;
     const BUF_SIZE: usize = 128;
+    
     let filename_addr: u64 =
         unsafe { ctx.read_at(FILENAME_OFFSET)? };
     let mut buf = [0u8; BUF_SIZE];
