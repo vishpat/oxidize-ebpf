@@ -50,7 +50,7 @@ fn try_tracepoint_demo(
         info!(
             &ctx,
             "{} {}",
-            0xffffffff & pid,
+            pid,
             filename
         );
     }
