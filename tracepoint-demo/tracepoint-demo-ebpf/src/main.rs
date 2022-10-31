@@ -28,13 +28,11 @@ fn try_tracepoint_demo(
 ) -> Result<c_long, c_long> {
 
     const FILENAME_OFFSET: usize = 16;
-    const BUF_SIZE: usize = 128;
-    
     let filename_addr: u64 =
         unsafe { ctx.read_at(FILENAME_OFFSET)? };
-    let mut buf = [0u8; BUF_SIZE];
-    let pid = bpf_get_current_pid_tgid() as u32;
 
+    const BUF_SIZE: usize = 128;
+    let mut buf = [0u8; BUF_SIZE];
     // read the filename
     let filename = unsafe {
         core::str::from_utf8_unchecked(
@@ -44,16 +42,11 @@ fn try_tracepoint_demo(
             )?,
         )
     };
+    
 
-    if filename.len() < BUF_SIZE {
-        // log the filename
-        info!(
-            &ctx,
-            "{} {}",
-            pid,
-            filename
-        );
-    }
+    let pid = bpf_get_current_pid_tgid() as u32;
+    
+    info!(&ctx, "{} {}", pid, filename);
 
     Ok(0)
 }
