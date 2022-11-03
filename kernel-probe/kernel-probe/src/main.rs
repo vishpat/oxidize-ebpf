@@ -7,7 +7,10 @@ use bytes::BytesMut;
 use clap::Parser;
 use kernel_probe_common::FileData;
 use log::{info, warn};
-use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use simplelog::{
+    ColorChoice, ConfigBuilder, LevelFilter,
+    TermLogger, TerminalMode,
+};
 use std::str::from_utf8;
 use tokio::{signal, task};
 
@@ -41,13 +44,22 @@ async fn main() -> Result<(), anyhow::Error> {
     ))?;
     if let Err(e) = BpfLogger::init(&mut bpf) {
         // This can happen if you remove all log statements from your eBPF program.
-        warn!("failed to initialize eBPF logger: {}", e);
+        warn!(
+            "failed to initialize eBPF logger: {}",
+            e
+        );
     }
-    let program: &mut KProbe = bpf.program_mut("kernel_probe").unwrap().try_into()?;
+    let program: &mut KProbe = bpf
+        .program_mut("kernel_probe")
+        .unwrap()
+        .try_into()?;
     program.load()?;
     program.attach("vfs_open", 0)?;
 
-    let mut perf_array = AsyncPerfEventArray::try_from(bpf.map_mut("EVENTS")?)?;
+    let mut perf_array =
+        AsyncPerfEventArray::try_from(
+            bpf.map_mut("EVENTS")?,
+        )?;
     for cpu_id in online_cpus()? {
         let mut buf = perf_array.open(cpu_id, None)?;
 
@@ -56,11 +68,17 @@ async fn main() -> Result<(), anyhow::Error> {
                 .map(|_| BytesMut::with_capacity(1024))
                 .collect::<Vec<_>>();
             loop {
-                let events = buf.read_events(&mut buffers).await.unwrap();
+                let events = buf
+                    .read_events(&mut buffers)
+                    .await
+                    .unwrap();
                 for i in 0..events.read {
                     let buf = &mut buffers[i];
-                    let ptr = buf.as_ptr() as *const FileData;
-                    let data = unsafe { ptr.read_unaligned() };
+                    let ptr = buf.as_ptr()
+                        as *const FileData;
+                    let data = unsafe {
+                        ptr.read_unaligned()
+                    };
                     println!(
                         "file_data: pid: {}, pgid: {}, uid: {}, path: {} ",
                         data.pid,
