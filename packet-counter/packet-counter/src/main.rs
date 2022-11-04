@@ -5,8 +5,13 @@ use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
-use packet_counter_common::{ICMP_PROTO, TCP_PROTO, UDP_PROTO};
-use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
+use packet_counter_common::{
+    ICMP_PROTO, TCP_PROTO, UDP_PROTO,
+};
+use simplelog::{
+    ColorChoice, ConfigBuilder, LevelFilter,
+    TermLogger, TerminalMode,
+};
 use std::net::TcpStream;
 use tokio::signal;
 
@@ -42,22 +47,44 @@ async fn main() -> Result<(), anyhow::Error> {
     ))?;
     if let Err(e) = BpfLogger::init(&mut bpf) {
         // This can happen if you remove all log statements from your eBPF program.
-        warn!("failed to initialize eBPF logger: {}", e);
+        warn!(
+            "failed to initialize eBPF logger: {}",
+            e
+        );
     }
 
-    let mut counters: HashMap<_, u8, u32> = HashMap::try_from(bpf.map_mut("COUNTERS")?)?;
+    let mut counters: HashMap<_, u8, u32> =
+        HashMap::try_from(bpf.map_mut("COUNTERS")?)?;
 
-    let client = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_RAW, ETH_P_ALL.to_be() as i32) };
-    let prog: &mut SocketFilter = bpf.program_mut("packet_counter").unwrap().try_into()?;
+    let client = unsafe {
+        libc::socket(
+            libc::AF_PACKET,
+            libc::SOCK_RAW,
+            ETH_P_ALL.to_be() as i32,
+        )
+    };
+    let prog: &mut SocketFilter = bpf
+        .program_mut("packet_counter")
+        .unwrap()
+        .try_into()?;
     prog.load()?;
     prog.attach(client)?;
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
     info!("Exiting...");
-    println!("TCP: {}", counters.get(&TCP_PROTO, 0).unwrap_or(0));
-    println!("UDP: {}", counters.get(&UDP_PROTO, 0).unwrap_or(0));
-    println!("ICMP: {}", counters.get(&ICMP_PROTO, 0).unwrap_or(0));
+    println!(
+        "TCP: {}",
+        counters.get(&TCP_PROTO, 0).unwrap_or(0)
+    );
+    println!(
+        "UDP: {}",
+        counters.get(&UDP_PROTO, 0).unwrap_or(0)
+    );
+    println!(
+        "ICMP: {}",
+        counters.get(&ICMP_PROTO, 0).unwrap_or(0)
+    );
 
     Ok(())
 }
