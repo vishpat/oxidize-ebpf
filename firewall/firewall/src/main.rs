@@ -61,7 +61,8 @@ async fn main() -> Result<(), anyhow::Error> {
         .unwrap()
         .try_into()?;
     program.load()?;
-    program.attach(&opt.iface, XdpFlags::default())
+    program
+        .attach(&opt.iface, XdpFlags::default())
         .context("failed to attach the XDP program")?;
 
     info!("Waiting for Ctrl-C...");

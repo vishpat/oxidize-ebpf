@@ -48,7 +48,8 @@ fn try_firewall(ctx: XdpContext) -> Result<u32, u32> {
     let start = ctx.data();
     let end = ctx.data_end();
 
-    // Without the boundary check, the eBPF verification will fail
+    // Without the boundary check, 
+    // the eBPF verification will fail
     if start + ETH_HDR_LEN > end {
         return Err(xdp_action::XDP_PASS);
     }
@@ -61,7 +62,8 @@ fn try_firewall(ctx: XdpContext) -> Result<u32, u32> {
         return Ok(xdp_action::XDP_PASS);
     }
 
-    // Without the boundary check, the eBPF verification will fail
+    // Without the boundary check, 
+    // the eBPF verification will fail
     if start + ETH_HDR_LEN + mem::size_of::<iphdr>()
         > end
     {
