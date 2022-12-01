@@ -1,22 +1,26 @@
 extern crate libc;
-use aya::{include_bytes_aligned, Bpf};
 use aya::maps::{HashMap, ProgramArray};
-use std::net::TcpStream;
-use std::os::unix::io::AsRawFd;
 use aya::programs::SocketFilter;
+use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
 use log::{info, warn};
+use prg_arr_map_common::{
+    ICMP_PROG_IDX, ICMP_PROTO, TCP_PROG_IDX,
+    TCP_PROTO, UDP_PROG_IDX, UDP_PROTO,
+};
+use simplelog::{
+    ColorChoice, ConfigBuilder, LevelFilter,
+    TermLogger, TerminalMode,
+};
+use std::net::TcpStream;
+use std::os::unix::io::AsRawFd;
 use tokio::signal;
-use simplelog::{ColorChoice, ConfigBuilder, LevelFilter, TermLogger, TerminalMode};
-use prg_arr_map_common::{ICMP_PROTO, TCP_PROTO, UDP_PROTO, ICMP_PROG_IDX, TCP_PROG_IDX, UDP_PROG_IDX};
 
 const ETH_P_ALL: u16 = 0x0003;
 
 #[derive(Debug, Parser)]
-struct Opt {
-    
-}
+struct Opt {}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -43,24 +47,45 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut bpf = Bpf::load(include_bytes_aligned!(
         "../../target/bpfel-unknown-none/release/prg-arr-map"
     ))?;
-    
-    let mut counters: HashMap<_, u8, u32> = HashMap::try_from(bpf.map_mut("COUNTERS")?)?;
-    let mut prog_array = ProgramArray::try_from(bpf.map_mut("JUMP_TABLE")?)?;
 
-    let client = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_RAW, ETH_P_ALL.to_be() as i32) };
-    let prog: &mut SocketFilter = bpf.program_mut("prg_arr_map").unwrap().try_into()?;
+    let mut counters: HashMap<_, u8, u32> =
+        HashMap::try_from(bpf.map_mut("COUNTERS")?)?;
+    let mut prog_array = ProgramArray::try_from(
+        bpf.map_mut("JUMP_TABLE")?,
+    )?;
+
+    let client = unsafe {
+        libc::socket(
+            libc::AF_PACKET,
+            libc::SOCK_RAW,
+            ETH_P_ALL.to_be() as i32,
+        )
+    };
+    let prog: &mut SocketFilter = bpf
+        .program_mut("prg_arr_map")
+        .unwrap()
+        .try_into()?;
     prog.load()?;
     prog.attach(client.as_raw_fd())?;
 
-    let tcp_prog: &mut SocketFilter = bpf.program_mut("process_tcp").unwrap().try_into()?;
+    let tcp_prog: &mut SocketFilter = bpf
+        .program_mut("process_tcp")
+        .unwrap()
+        .try_into()?;
     tcp_prog.load()?;
     prog_array.set(TCP_PROG_IDX, tcp_prog, 0)?;
 
-    let udp_prog: &mut SocketFilter = bpf.program_mut("process_udp").unwrap().try_into()?;
+    let udp_prog: &mut SocketFilter = bpf
+        .program_mut("process_udp")
+        .unwrap()
+        .try_into()?;
     udp_prog.load()?;
     prog_array.set(UDP_PROG_IDX, udp_prog, 0)?;
 
-    let icmp_prog: &mut SocketFilter = bpf.program_mut("process_icmp").unwrap().try_into()?;
+    let icmp_prog: &mut SocketFilter = bpf
+        .program_mut("process_icmp")
+        .unwrap()
+        .try_into()?;
     icmp_prog.load()?;
     prog_array.set(ICMP_PROG_IDX, icmp_prog, 0)?;
 
@@ -68,9 +93,18 @@ async fn main() -> Result<(), anyhow::Error> {
     signal::ctrl_c().await?;
     info!("Exiting...");
 
-    println!("TCP: {}", counters.get(&TCP_PROTO, 0).unwrap_or(0));
-    println!("UDP: {}", counters.get(&UDP_PROTO, 0).unwrap_or(0));
-    println!("ICMP: {}", counters.get(&ICMP_PROTO, 0).unwrap_or(0));
+    println!(
+        "TCP: {}",
+        counters.get(&TCP_PROTO, 0).unwrap_or(0)
+    );
+    println!(
+        "UDP: {}",
+        counters.get(&UDP_PROTO, 0).unwrap_or(0)
+    );
+    println!(
+        "ICMP: {}",
+        counters.get(&ICMP_PROTO, 0).unwrap_or(0)
+    );
 
     Ok(())
 }
