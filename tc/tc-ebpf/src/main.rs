@@ -20,17 +20,18 @@ const ETH_P_IP: u16 = 0x0800;
 const ETH_HDR_LEN: usize = mem::size_of::<ethhdr>();
 const IP_HDR_LEN: usize = mem::size_of::<iphdr>();
 const TCP_PROTOCOL: u8 = 0x06;
+const TCP_SRC_PORT_OFFSET: usize = ETH_HDR_LEN + IP_HDR_LEN;
 const TCP_DST_PORT_OFFSET: usize = ETH_HDR_LEN + IP_HDR_LEN + 2;
 
-#[classifier(name="tc")]
-pub fn tc(ctx: TcContext) -> i32 {
-    match try_tc(ctx) {
+#[classifier(name="tc_ingress")]
+pub fn tc_ingress(ctx: TcContext) -> i32 {
+    match try_tc_ingress(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
     }
 }
 
-fn try_tc(mut ctx: TcContext) -> Result<i32, i32> {
+fn try_tc_ingress(mut ctx: TcContext) -> Result<i32, i32> {
 
     let eth_proto = u16::from_be(
         ctx.load(offset_of!(ethhdr, h_proto))
@@ -58,7 +59,7 @@ fn try_tc(mut ctx: TcContext) -> Result<i32, i32> {
         return Ok(TC_ACT_PIPE);
     }
 
-    info!(&ctx, "TCP packet to port 8080");
+    info!(&ctx, "ingress TCP packet with dst port 8080");
 
     ctx.store(TCP_DST_PORT_OFFSET, &8081u16.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
@@ -66,6 +67,59 @@ fn try_tc(mut ctx: TcContext) -> Result<i32, i32> {
     ctx.l4_csum_replace(TCP_DST_PORT_OFFSET, 
         8080u16.to_be() as u64, 
         8081u16.to_be() as u64, 2)
+        .map_err(|_| TC_ACT_PIPE)?;
+
+    Ok(0)
+}
+
+#[classifier(name="tc_egress")]
+pub fn tc_egress(ctx: TcContext) -> i32 {
+    match try_tc_egress(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_tc_egress(mut ctx: TcContext) -> Result<i32, i32> {
+
+    let eth_proto = u16::from_be(
+        ctx.load(offset_of!(ethhdr, h_proto))
+            .map_err(|_| TC_ACT_PIPE)?,
+    );
+    if eth_proto != ETH_P_IP {
+        return Ok(TC_ACT_PIPE);
+    }
+
+    let protocol = u8::from_be(
+        ctx.load(ETH_HDR_LEN + offset_of!(iphdr, protocol))
+            .map_err(|_| TC_ACT_PIPE)?,
+    );
+
+    if protocol != TCP_PROTOCOL {
+        return Ok(TC_ACT_PIPE);
+    }
+
+    let src_port = u16::from_be(
+        ctx.load(TCP_SRC_PORT_OFFSET)
+            .map_err(|_| TC_ACT_PIPE)?,
+    );
+
+    if src_port != 22{
+        info!(&ctx, "egress TCP packet with src port {}", src_port);
+    }
+
+    if src_port != 8081 {
+        return Ok(TC_ACT_PIPE);
+    }
+
+    info!(&ctx, "egress TCP packet with src port 8081");
+
+    ctx.store(TCP_SRC_PORT_OFFSET, &8080u16.to_be(), 0)
+        .map_err(|_| TC_ACT_PIPE)?;
+    
+    ctx.l4_csum_replace(TCP_DST_PORT_OFFSET, 
+        8081u16.to_be() as u64, 
+        8080u16.to_be() as u64, 2)
         .map_err(|_| TC_ACT_PIPE)?;
 
     Ok(0)
