@@ -30,7 +30,6 @@ pub fn tc(ctx: TcContext) -> i32 {
     }
 }
 
-
 fn try_tc(mut ctx: TcContext) -> Result<i32, i32> {
 
     let eth_proto = u16::from_be(
@@ -61,10 +60,12 @@ fn try_tc(mut ctx: TcContext) -> Result<i32, i32> {
 
     info!(&ctx, "TCP packet to port 8080");
 
-    let mut ctx2 = &mut ctx;
-    ctx2.store(TCP_DST_PORT_OFFSET, &8081u16.to_be(), 0)
+    ctx.store(TCP_DST_PORT_OFFSET, &8081u16.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
-    ctx2.l4_csum_replace(TCP_DST_PORT_OFFSET, 8080u16.to_be() as u64, 8081u16.to_be() as u64, 2)
+    
+    ctx.l4_csum_replace(TCP_DST_PORT_OFFSET, 
+        8080u16.to_be() as u64, 
+        8081u16.to_be() as u64, 2)
         .map_err(|_| TC_ACT_PIPE)?;
 
     Ok(0)
