@@ -16,6 +16,9 @@ use aya_bpf::{
 use aya_log_ebpf::info;
 use memoffset::offset_of;
 
+const HTTP_PORT: u16 = 8080;
+const HTTP_NAT_PORT: u16 = 8081;
+
 const ETH_P_IP: u16 = 0x0800;
 const ETH_HDR_LEN: usize = mem::size_of::<ethhdr>();
 const IP_HDR_LEN: usize = mem::size_of::<iphdr>();
@@ -55,19 +58,21 @@ fn try_tc_ingress(mut ctx: TcContext) -> Result<i32, i32> {
             .map_err(|_| TC_ACT_PIPE)?,
     );
 
-    if dst_port != 8080 {
+    if dst_port != HTTP_PORT {
         return Ok(TC_ACT_PIPE);
     }
 
-    info!(&ctx, "ingress TCP packet with dst port 8080");
+    info!(&ctx, "ingress TCP packet with dst port {}", dst_port);
 
-    ctx.store(TCP_DST_PORT_OFFSET, &8081u16.to_be(), 0)
+    ctx.store(TCP_DST_PORT_OFFSET, &HTTP_NAT_PORT.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
     
     ctx.l4_csum_replace(TCP_DST_PORT_OFFSET, 
-        8080u16.to_be() as u64, 
-        8081u16.to_be() as u64, 2)
+        HTTP_PORT.to_be() as u64, 
+        HTTP_NAT_PORT.to_be() as u64, 2)
         .map_err(|_| TC_ACT_PIPE)?;
+    
+    info!(&ctx, "Successfully replaced checksum for ingress TCP packet with dst port {}", dst_port);
 
     Ok(0)
 }
@@ -108,18 +113,18 @@ fn try_tc_egress(mut ctx: TcContext) -> Result<i32, i32> {
         info!(&ctx, "egress TCP packet with src port {}", src_port);
     }
 
-    if src_port != 8081 {
+    if src_port != HTTP_NAT_PORT {
         return Ok(TC_ACT_PIPE);
     }
 
-    info!(&ctx, "egress TCP packet with src port 8081");
+    info!(&ctx, "egress TCP packet with src port {}", src_port);
 
-    ctx.store(TCP_SRC_PORT_OFFSET, &8080u16.to_be(), 0)
+    ctx.store(TCP_SRC_PORT_OFFSET, &HTTP_PORT.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
     
     ctx.l4_csum_replace(TCP_DST_PORT_OFFSET, 
-        8081u16.to_be() as u64, 
-        8080u16.to_be() as u64, 2)
+        HTTP_NAT_PORT.to_be() as u64, 
+        HTTP_PORT.to_be() as u64, 2)
         .map_err(|_| TC_ACT_PIPE)?;
 
     Ok(0)
