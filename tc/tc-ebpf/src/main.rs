@@ -14,6 +14,7 @@ use aya_bpf::{
     programs::TcContext,
 };
 use memoffset::offset_of;
+use aya_log_ebpf::info;
 
 const HTTP_PORT: u16 = 8080;
 const HTTP_NAT_PORT: u16 = 8081;
@@ -69,6 +70,9 @@ fn try_tc_ingress(mut ctx: TcContext) -> Result<i32, i32> {
 
     ctx.store(TCP_DST_PORT_OFFSET, &HTTP_NAT_PORT.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
+    
+    info!(&ctx, "Redirected TCP traffic from {} to port {}",
+        HTTP_PORT, HTTP_NAT_PORT); 
   
     Ok(0)
 }
@@ -118,6 +122,9 @@ fn try_tc_egress(mut ctx: TcContext) -> Result<i32, i32> {
     ctx.store(TCP_SRC_PORT_OFFSET, &HTTP_PORT.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
     
+    info!(&ctx, "Changed the source port from {} to port {}",
+        HTTP_NAT_PORT, HTTP_PORT); 
+
     Ok(0)
 }
 
