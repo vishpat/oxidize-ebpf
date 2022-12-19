@@ -9,11 +9,10 @@ mod vmlinux;
 use vmlinux::{ethhdr, iphdr};
 use core::mem;
 use aya_bpf::{
-    bindings::{TC_ACT_PIPE, TC_ACT_SHOT},
+    bindings::{TC_ACT_PIPE},
     macros::classifier,
     programs::TcContext,
 };
-use aya_log_ebpf::info;
 use memoffset::offset_of;
 
 const HTTP_PORT: u16 = 8080;
