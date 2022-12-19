@@ -63,8 +63,6 @@ fn try_tc_ingress(mut ctx: TcContext) -> Result<i32, i32> {
         return Ok(TC_ACT_PIPE);
     }
 
-    info!(&ctx, "ingress TCP packet with dst port {}", dst_port);
-
     ctx.l4_csum_replace(TCP_CHECKSUM_OFFSET, 
         HTTP_PORT.to_be() as u64, 
         HTTP_NAT_PORT.to_be() as u64, 2)
@@ -73,7 +71,6 @@ fn try_tc_ingress(mut ctx: TcContext) -> Result<i32, i32> {
     ctx.store(TCP_DST_PORT_OFFSET, &HTTP_NAT_PORT.to_be(), 0)
         .map_err(|_| TC_ACT_PIPE)?;
   
-    info!(&ctx, "Updated dst port to {}", HTTP_NAT_PORT);
     Ok(0)
 }
 
@@ -112,8 +109,6 @@ fn try_tc_egress(mut ctx: TcContext) -> Result<i32, i32> {
     if src_port != HTTP_NAT_PORT {
         return Ok(TC_ACT_PIPE);
     }
-
-    info!(&ctx, "egress TCP packet with src port {}", src_port);
 
     ctx.l4_csum_replace(TCP_CHECKSUM_OFFSET, 
         HTTP_NAT_PORT.to_be() as u64, 
