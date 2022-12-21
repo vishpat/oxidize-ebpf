@@ -77,7 +77,7 @@ fn try_tc_ingress(mut ctx: TcContext) -> Result<i32, i32> {
   info!(&ctx, "Redirected TCP traffic from {} to port {}",
     HTTP_ADV_PORT, HTTP_ACT_PORT); 
 
-  Ok(0)
+  Ok(TC_ACT_PIPE)
 }
 
 #[classifier(name="tc_egress")]
@@ -128,7 +128,7 @@ fn try_tc_egress(mut ctx: TcContext) -> Result<i32, i32> {
   info!(&ctx, "Changed the source port from {} to port {}",
     HTTP_ACT_PORT, HTTP_ADV_PORT); 
 
-  Ok(0)
+  Ok(TC_ACT_PIPE)
 }
 
 #[panic_handler]
